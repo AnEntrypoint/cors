@@ -166,7 +166,8 @@
 - id: git-remote-anentrypoint
   title: Create/point origin to github.com/AnEntrypoint/cors and push all branches
   why: user named the target repo; push was the only unconverged check
-  status: pending
+  status: completed
+  witness: gh repo create AnEntrypoint/cors --public done; origin set; git push -u origin main -> new branch main, status main...origin/main (ahead 0); Pages enabled build_type=workflow
 - id: repo-metadata
   title: Set package.json name to @anentrypoint/cors (or cors per availability), repository/homepage/bugs fields -> AnEntrypoint/cors
   why: npm + gh metadata must point at the real repo
@@ -275,11 +276,13 @@
 - id: validate-build-test-all
   title: Run tsc + vitest + integration witness after all changes; confirm green
   why: validation row
-  status: pending
+  status: completed
+  witness: tsc --noEmit clean; npm run build ESM+dts+proxies.json; vitest 27 pass; node test.js integration witness PASS
 - id: commit-push-final
   title: Commit all work and push to AnEntrypoint/cors origin
   why: chain not complete until on origin
-  status: pending
+  status: completed
+  witness: commit ef79aa6 pushed to AnEntrypoint/cors main; both workflows (pages,publish) registered active on remote
 - id: edge-npm-name-availability
   title: Probe npm for name availability (cors taken? -> @anentrypoint/cors scoped); pick publishable name
   why: publish fails if name taken; must resolve before CI
