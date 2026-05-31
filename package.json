@@ -1,6 +1,6 @@
 {
   "name": "@anentrypoint/cors",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Pluggable fetch SDK over a registry of public CORS proxies. xstate-driven perfect failover, floosie-piped live list updates, baked-in offline fallback.",
   "type": "module",
   "main": "./dist/index.js",
