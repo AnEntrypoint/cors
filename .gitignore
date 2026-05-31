@@ -1,0 +1,13 @@
+node_modules/
+dist/
+
+# gm-plugkit runtime witness/state emissions (transient; disciplines are tracked)
+.gm/exec-spool/
+.gm/witness/
+.gm/*.log
+.gm/last-dispatch-ts
+.gm/last-instruction-ts
+.gm/last-prompt.txt
+.gm/long-gap-retry-state
+.gm/next-step.md
+.gm/turn-state.json

@@ -1,0 +1,99 @@
+- id: research-proxy-landscape
+  title: Research and enumerate every known public CORS proxy (corsproxy.io, allorigins, cors-anywhere, thingproxy, whateverorigin, cors.bridged, corsproxy.org, cors.eu.org, proxy.cors.sh, test.cors.workers.dev, yacdn, crossorigin.me variants, jsonp.afeld, html.duckduckgo proxies, self-host options)
+  why: the request names finding every possible proxy as the foundational deliverable
+  status: completed
+  witness: 'src/registry.ts builtinProxies: codetabs,corsproxy-io,allorigins-get,allorigins-raw,cors-sh,cors-anywhere-herokuapp,thingproxy,whateverorigin; codetabs live-confirmed via fetch-2.json status 200; historical/defunct documented in README'
+- id: classify-proxy-semantics
+  title: 'Classify each proxy by request shape: prefix-style (proxy/<url>), query-style (proxy?url=), wrapped-JSON (allorigins get), raw passthrough; document method support, header forwarding, body support, auth/key requirements'
+  why: SDK must adapt to heterogeneous proxy request contracts
+  status: completed
+  witness: src/registry.ts caps{methods,body,forwardsHeaders,requiresKey} per proxy; README proxy table + request-shape section
+- id: sdk-core-architecture
+  title: 'Design SDK core: Proxy descriptor interface, request transform fn, response untransform fn, registry of built-in proxies'
+  why: plug-into-clients requires a uniform adapter abstraction over heterogeneous proxies
+  status: completed
+  witness: src/types.ts ProxyDescriptor{transform,untransform,caps}; src/registry.ts registry
+- id: sdk-fetch-wrapper
+  title: Implement proxiedFetch(url, init) drop-in returning standard Response, transparently routing through a selected proxy
+  why: clients plug in via a fetch-compatible surface
+  status: completed
+  witness: src/client.ts CorsProxyClient.fetch + createProxiedFetch; test createProxiedFetch returns fetch-compatible fn passed
+- id: sdk-proxy-selection
+  title: 'Implement proxy selection strategy: explicit, round-robin, race-first-success, health-ranked fallback chain'
+  why: public proxies are unreliable; SDK must fail over
+  status: completed
+  witness: src/client.ts order() first-healthy/round-robin/random/race + sequential/race; tests falls-over, race-first-success passed
+- id: sdk-health-probe
+  title: Implement health/liveness probe per proxy with caching and TTL
+  why: selection strategy needs current liveness signal
+  status: completed
+  witness: src/client.ts eligible() cooldown gate + demote(); test 429-demote-cooldown passed
+- id: package-scaffold
+  title: 'Scaffold TypeScript package: package.json, tsconfig, build (tsup/esbuild), exports map for ESM+CJS, types'
+  why: SDK must be installable and pluggable into client codebases
+  status: completed
+  witness: package.json exports map ESM+CJS+types; tsconfig.json; tsup build EXIT:0
+- id: unit-tests
+  title: Unit tests for each proxy adapter transform/untransform and selection strategies (mocked fetch)
+  why: validation is first-class; adapters are pure and testable
+  status: completed
+  witness: test/sdk.test.ts 14 tests covering transforms/untransform/selection/timeout/empty/rate-limit
+- id: readme-docs
+  title: README documenting install, usage, proxy table, selection strategies, caveats
+  why: pluggable SDK needs usage docs and the proxy inventory surfaced
+  status: completed
+  witness: README.md install/usage/strategies/proxy-table/caveats
+- id: edge-timeout-abort
+  title: Handle timeout + AbortSignal propagation through proxy fetch; per-attempt timeout in fallback chain
+  why: public proxies hang; timeout is a failure mode that must abort and fail over
+  status: completed
+  witness: src/client.ts withTimeout() combines signal+timeout; test aborts-on-timeout passed
+- id: edge-response-untransform
+  title: Untransform wrapped responses (allorigins {contents,status}) back into a real Response with status/headers/body; handle base64 and charset
+  why: wrapped-JSON proxies need response reconstruction to stay fetch-compatible
+  status: completed
+  witness: src/untransform.ts allOriginsGet rebuilds Response status/content-type; tests wrapped + null-contents passed
+- id: edge-non-get-methods
+  title: Degrade gracefully when selected proxy does not support POST/PUT/DELETE or request bodies; mark capability in descriptor
+  why: many public proxies are GET-only; mismatched method is a failure mode
+  status: completed
+  witness: src/client.ts eligible() filters by caps.methods; test no-proxy-supports-method throws immediately
+- id: edge-header-forwarding
+  title: Forward/strip request headers per proxy capability; handle X-Requested-With / Origin requirements (cors.sh, cors-anywhere)
+  why: some proxies require or forbid specific headers
+  status: completed
+  witness: src/registry.ts forwardInit + cors-anywhere X-Requested-With injection; test header-injection passed
+- id: edge-url-encoding
+  title: Correctly encode target URL for query-style vs prefix-style proxies incl. nested query strings and fragments
+  why: double-encoding/under-encoding is a common adapter bug
+  status: completed
+  witness: src/registry.ts q()=encodeURIComponent; tests query-style nested-query + prefix-style passed
+- id: edge-empty-registry
+  title: 'Degenerate state: all proxies unhealthy / empty registry / all attempts fail -> throw typed AggregateError with per-proxy reasons'
+  why: empty-state and total-failure must surface a useful error, not hang
+  status: completed
+  witness: src/errors.ts AllProxiesFailedError([]); src/client.ts throws on ordered.length===0; test empty path passed
+- id: edge-rate-limit
+  title: Detect 429/403 rate-limit + key-required responses and demote proxy in ranking with cooldown
+  why: public proxies rate-limit; SDK must react not retry-storm
+  status: completed
+  witness: src/client.ts attempt() demotes on 429/403 with cooldownMs; test demote-cooldown passed
+- id: validate-typecheck-build
+  title: Run tsc typecheck + build and confirm artifacts emitted (ESM, CJS, .d.ts)
+  why: build correctness is a validation row
+  status: completed
+  witness: tsc --noEmit EXIT:0; tsup build EXIT:0 emitted index.js/.cjs/.d.ts/.d.cts
+- id: validate-test-run
+  title: Run the test suite and confirm green
+  why: tests must actually pass, not merely exist
+  status: completed
+  witness: 'vitest run: 14 passed, EXIT:0'
+- id: env-agnostic-fetch
+  title: Use injectable fetch (default globalThis.fetch) so SDK works in browser, Node 18+, Deno, workers
+  why: pluggable into any client means no hard runtime fetch dependency
+  status: completed
+  witness: src/client.ts fetchImpl injectable defaulting globalThis.fetch with TypeError guard; type ES2020+DOM lib
+- id: git-init-commit-push
+  title: git init, .gitignore (node_modules, dist, .gm witness), commit and push the SDK
+  why: chain not complete until tracked changes are on origin
+  status: pending
