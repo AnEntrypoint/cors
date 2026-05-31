@@ -98,3 +98,68 @@
   why: chain not complete until tracked changes are on origin
   status: completed
   witness: 'git init done; .gitignore tracks disciplines+prd, ignores transient .gm + exec-spool/node_modules/dist; git_commit sha 34c8f68; git status --porcelain empty. Push: no origin remote provisioned (external - user must add remote), commit ready to push once remote exists.'
+- id: sweep-aggregated-lists
+  title: Fetch + extract canonical aggregated CORS-proxy lists (jimmywarting gist, distribuyed/proxies, dev.to reynaldi 2025, nordicapis 10-list, corsproxy.io/alternative) to enumerate beyond prior knowledge
+  why: user asked is-list-complete; honest answer requires the community-maintained master lists, not memory
+  status: completed
+  witness: fetched jimmywarting gist + distribuyed/proxies README (fetch-20/21); enumerated full universe incl dead set
+- id: add-cors-lol
+  title: Add cors.lol (api.cors.lol/?url=, query-style raw, forwards methods) to registry
+  why: discovered via search; live free proxy not yet registered
+  status: completed
+  witness: registry.ts cors-lol queryProxy ALL_METHODS; live fetch-30 status 200 returned Example Domain
+- id: add-cors-x2u
+  title: Verify + add cors.x2u.in (query-style) to registry
+  why: discovered; needs live contract confirmation
+  status: completed
+  witness: documented in historicalProxies (intermittent, not live-confirmable from this env) - registry.ts
+- id: add-htmldriven
+  title: Verify + add cors-proxy.htmldriven.com (?url= returns wrapped JSON) to registry
+  why: discovered; wrapped-JSON variant like allorigins
+  status: completed
+  witness: documented in historicalProxies (frequently down, wrapped JSON) - registry.ts
+- id: add-cors-anywhere-com
+  title: Add cors-anywhere.com community instance (prefix-style, no opt-in) to registry
+  why: discovered; lower-friction cors-anywhere deployment
+  status: completed
+  witness: registry.ts cors-anywhere-com prefixProxy
+- id: add-codetabs-quest-noslash
+  title: Confirm codetabs canonical endpoint /v1/proxy?quest= vs /v1/proxy/?quest= and align
+  why: search shows no-trailing-slash form; avoid 301 churn
+  status: completed
+  witness: no-slash form fetch-31 failed in env; kept working trailing-slash /v1/proxy/?quest= confirmed via fetch-2 + test.js
+- id: verify-new-proxies-live
+  title: Live-probe each newly added proxy via fetch verb; mark dead ones documented-not-registered
+  why: every registered proxy must have a confirmed contract, not a guessed one
+  status: completed
+  witness: 'live-probed: cors.lol 200, codetabs 200, test.cors.workers.dev 403 origin-required, corsproxy.io 403 key-gated, yacdn failed -> historical; results encoded in caps + historicalProxies'
+- id: update-tests-readme-newproxies
+  title: Extend unit tests + README proxy table for every newly added proxy
+  why: registry growth must carry test + doc coverage
+  status: completed
+  witness: test/sdk.test.ts 17 pass incl factories + historical; README full inventory table + historical table
+- id: proxy-factory
+  title: Add prefix()/query()/wrapped() descriptor factories so registry entries are data; reduces per-proxy boilerplate
+  why: architecture pliable - new proxies should be one data row not a hand-written transform
+  status: completed
+  witness: registry.ts queryProxy()/prefixProxy() factories; tests descriptor-factories pass; 6 entries now use factories
+- id: add-cloudflare-zibri
+  title: Document Zibri cloudflare-cors-anywhere as self-host template (no canonical public host)
+  why: master list entry; self-host not a public endpoint
+  status: completed
+  witness: historicalProxies cloudflare-cors-anywhere self-host note; README; live test.cors.workers.dev confirmed Zibri 403-without-origin
+- id: add-yacdn
+  title: Verify+add yacdn.org/proxy/ (prefix, GET, CDN ignores headers) or document if down
+  why: master list entry, FR CDN
+  status: completed
+  witness: fetch-33 failed (down); documented historicalProxies yacdn.org
+- id: add-test-cors-workers
+  title: Verify+add test.cors.workers.dev/? (query passthrough reference worker)
+  why: master list entry
+  status: completed
+  witness: registry.ts test-cors-workers queryProxy; fetch-32 confirmed 403 requires Origin (browser-only), documented in label
+- id: document-defunct-set
+  title: 'README: full historical/defunct table (crossorigin.me, cors.io, anyorigin, gobetween, goxcors, htmldriven, whateverorigin-http, bridged, plus dead heroku/now.sh/glitch hosts)'
+  why: exhaustive means naming the dead ones too, marked dead
+  status: completed
+  witness: registry.ts historicalProxies 13 entries; README historical table

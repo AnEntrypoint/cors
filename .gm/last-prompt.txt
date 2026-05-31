@@ -1,1 +1,0 @@
-in this project we must exhaustively find every possible public cors proxy, and implement an sdk that we can plug into clients to use them

@@ -1,5 +1,5 @@
 export { CorsProxyClient, createProxiedFetch } from "./client.js";
-export { builtinProxies, getProxy } from "./registry.js";
+export { builtinProxies, historicalProxies, getProxy, queryProxy, prefixProxy } from "./registry.js";
 export { AllProxiesFailedError } from "./errors.js";
 export { passthrough, allOriginsGet, untransforms } from "./untransform.js";
 export type {

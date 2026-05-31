@@ -73,20 +73,71 @@ const client = new CorsProxyClient({ proxies: [mine, getProxy("codetabs")!] });
 ## Built-in proxy inventory
 
 Public CORS proxies are heterogeneous in their request contract and unreliable
-in their uptime; this list captures the ones with a usable, documented contract
+in their uptime. The inventory below was cross-checked against the canonical
+community-maintained lists ([jimmywarting's gist](https://gist.github.com/jimmywarting/ac1be6ea0297c16c477e17f8fbe51347)
+and [distribuyed/proxies](https://github.com/distribuyed/proxies)) and live-probed
 at time of writing. None is guaranteed to be up — that is exactly why the SDK
 fails over.
 
-| id                         | endpoint                                      | shape        | methods        | body | headers | key |
-|----------------------------|-----------------------------------------------|--------------|----------------|------|---------|-----|
-| codetabs                   | api.codetabs.com/v1/proxy/?quest=             | query, raw   | GET, HEAD      | no   | no      | no  |
-| corsproxy-io               | corsproxy.io/?url=                            | query, raw   | all            | yes  | yes     | no  |
-| allorigins-get             | api.allorigins.win/get?url=                   | query, JSON  | GET            | no   | no      | no  |
-| allorigins-raw             | api.allorigins.win/raw?url=                   | query, raw   | GET            | no   | no      | no  |
-| cors-sh                    | proxy.cors.sh/                                | prefix, raw  | all            | yes  | yes     | no  |
-| cors-anywhere-herokuapp    | cors-anywhere.herokuapp.com/                  | prefix, raw  | all            | yes  | yes     | no  |
-| thingproxy                 | thingproxy.freeboard.io/fetch/                | prefix, raw  | GET, POST      | yes  | yes     | no  |
-| whateverorigin             | www.whateverorigin.org/get?url=               | query, raw   | GET            | no   | no      | no  |
+`codetabs` and `cors-lol` were live-confirmed returning 200; `corsproxy-io` and
+`test-cors-workers` require a browser Origin header / dev origin and return 403
+to header-less server-side fetches (they work from a browser).
+
+| id                       | endpoint                            | shape        | methods   | body | headers | key |
+|--------------------------|-------------------------------------|--------------|-----------|------|---------|-----|
+| codetabs                 | api.codetabs.com/v1/proxy/?quest=   | query, raw   | GET, HEAD | no   | no      | no  |
+| cors-lol                 | api.cors.lol/?url=                  | query, raw   | all       | yes  | yes     | no  |
+| corsproxy-io             | corsproxy.io/?url=                  | query, raw   | all       | yes  | yes     | dev |
+| allorigins-get           | api.allorigins.win/get?url=         | query, JSON  | GET       | no   | no      | no  |
+| allorigins-raw           | api.allorigins.win/raw?url=         | query, raw   | GET       | no   | no      | no  |
+| cors-sh                  | proxy.cors.sh/                      | prefix, raw  | all       | yes  | yes     | no  |
+| cors-anywhere-herokuapp  | cors-anywhere.herokuapp.com/        | prefix, raw  | all       | yes  | yes     | opt-in |
+| cors-anywhere-com        | cors-anywhere.com/                  | prefix, raw  | all       | yes  | yes     | no  |
+| thingproxy               | thingproxy.freeboard.io/fetch/      | prefix, raw  | GET, POST | yes  | yes     | no  |
+| test-cors-workers        | test.cors.workers.dev/?            | query, raw   | GET, HEAD | no   | no      | browser |
+| whateverorigin           | www.whateverorigin.org/get?url=     | query, raw   | GET       | no   | no      | no  |
+
+The `key` column: `no` = open, `dev` = free for development origins only,
+`opt-in` = demo server needs opt-in, `browser` = needs a browser Origin header.
+
+### Adding proxies as data
+
+Use the `queryProxy` / `prefixProxy` factories instead of hand-writing a
+descriptor:
+
+```ts
+import { CorsProxyClient, queryProxy, prefixProxy } from "cors-proxy-sdk";
+
+const client = new CorsProxyClient({
+  proxies: [
+    queryProxy({ id: "mine", label: "my worker", base: "https://cors.my.dev/?url=" }),
+    prefixProxy({ id: "ca", label: "my cors-anywhere", base: "https://ca.my.dev/" }),
+  ],
+});
+```
+
+### Historical / defunct / self-host-only proxies
+
+Documented for completeness via the exported `historicalProxies` array; **not**
+registered because they have no reliable public contract. Spin up your own
+(`Zibri/cloudflare-cors-anywhere` Worker, or `Rob--W/cors-anywhere`) for
+production.
+
+| id                          | note                                                      |
+|-----------------------------|-----------------------------------------------------------|
+| crossorigin.me              | defunct; required Origin header, 2MB cap                  |
+| cors.io                     | defunct; GET/HEAD raw at cors.io/?                        |
+| anyorigin.com               | defunct; original JSONP AnyOrigin, http-only             |
+| cors.bridged.cc             | deprecated; Grida bridged, 16MB/request                  |
+| yacdn.org                   | yacdn.org/proxy/ CDN (FR); unreliable, ignores headers   |
+| jsonp.afeld.me              | JSONProxy; JSONP-only GET                                 |
+| cors-proxy.htmldriven.com   | wrapped JSON ?url=; frequently down                      |
+| gobetween                   | okfn/gobetween; self-host                                 |
+| goxcors                     | appspot; POST x-www-form-urlencoded only, always html    |
+| cloudflare-cors-anywhere    | Zibri self-host Worker template, 100k req/day            |
+| cors.x2u.in                 | query-style; intermittent                                |
+| taskcluster                 | whitelisted to taskcluster only                          |
+| heroku-now-glitch-misc      | many dead instances (cors.now.sh, corsify.me, cors.hyoo.ru, ...) |
 
 ### Request shapes
 

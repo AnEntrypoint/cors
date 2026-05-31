@@ -3,7 +3,10 @@ import {
   CorsProxyClient,
   createProxiedFetch,
   builtinProxies,
+  historicalProxies,
   getProxy,
+  queryProxy,
+  prefixProxy,
   allOriginsGet,
   AllProxiesFailedError,
   type ProxyDescriptor,
@@ -17,14 +20,36 @@ function fakeResponse(body: string, init?: ResponseInit): Response {
 
 describe("registry", () => {
   it("registers a non-trivial set of distinct proxies", () => {
-    expect(builtinProxies.length).toBeGreaterThanOrEqual(8);
+    expect(builtinProxies.length).toBeGreaterThanOrEqual(11);
     const ids = new Set(builtinProxies.map((p) => p.id));
     expect(ids.size).toBe(builtinProxies.length);
   });
 
   it("looks up by id", () => {
     expect(getProxy("codetabs")?.id).toBe("codetabs");
+    expect(getProxy("cors-lol")?.id).toBe("cors-lol");
     expect(getProxy("nope")).toBeUndefined();
+  });
+
+  it("documents historical/defunct proxies without registering them", () => {
+    expect(historicalProxies.length).toBeGreaterThanOrEqual(10);
+    const liveIds = new Set(builtinProxies.map((p) => p.id));
+    // none of the documented-dead ones are in the live registry
+    for (const h of historicalProxies) expect(liveIds.has(h.id)).toBe(false);
+  });
+});
+
+describe("descriptor factories", () => {
+  const req = { url: "https://example.com/p?x=1", method: "GET", headers: new Headers(), body: null, signal: null };
+
+  it("queryProxy URL-encodes the target onto the base", () => {
+    const p = queryProxy({ id: "t", label: "t", base: "https://h/?url=" });
+    expect(p.transform(req).url).toBe(`https://h/?url=${encodeURIComponent(req.url)}`);
+  });
+
+  it("prefixProxy appends the raw target to the base", () => {
+    const p = prefixProxy({ id: "t", label: "t", base: "https://h/" });
+    expect(p.transform(req).url).toBe(`https://h/${req.url}`);
   });
 });
 
