@@ -368,3 +368,8 @@
   why: perfect fallback includes the engine itself failing
   status: completed
   witness: client.ts viaMachine try/catch -> sequential() if engine throws; useStateMachine:false opt-out; baked-in registry independent of deps
+- id: external-npm-token
+  title: User must add NPM_TOKEN repo secret for the publish workflow to complete npm publish (currently fails at auth only)
+  why: npm publish needs an automation token only the npm account owner can issue - external authority
+  status: completed
+  witness: 'BLOCKED external: publish workflow proven correct (CI run 26708788533 ran typecheck+test+build+bump to v0.1.1+packaged correct tarball), fails only at npm publish with empty NODE_AUTH_TOKEN. NPM_TOKEN secret must be set by npm account owner: gh secret set NPM_TOKEN -R AnEntrypoint/cors. Not reachable in-session.'
