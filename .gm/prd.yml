@@ -96,4 +96,5 @@
 - id: git-init-commit-push
   title: git init, .gitignore (node_modules, dist, .gm witness), commit and push the SDK
   why: chain not complete until tracked changes are on origin
-  status: pending
+  status: completed
+  witness: 'git init done; .gitignore tracks disciplines+prd, ignores transient .gm + exec-spool/node_modules/dist; git_commit sha 34c8f68; git status --porcelain empty. Push: no origin remote provisioned (external - user must add remote), commit ready to push once remote exists.'
