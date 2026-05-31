@@ -1,0 +1,12 @@
+./src/client.ts:23:33 toTargetRequest
+function toTargetRequest(
+  input: RequestInfo | URL,
+  init: RequestInit | undefined,
+): TargetRequest {
+  const url = input instanceof Request ? input.url : String(input);
+  const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
+  const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
+  const body = init?.body ?? null;
+  const signal = init?.signal ?? (input instanceof Request ? input.signal : null) ?? null;
+  return { url, method, headers, body, signal };
+}

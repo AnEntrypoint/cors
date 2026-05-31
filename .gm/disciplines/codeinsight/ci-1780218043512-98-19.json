@@ -1,0 +1,19 @@
+./test/sdk.test.ts:98:115 
+() => {
+  it("rebuilds a real Response from { contents, status }", async () => {
+    const wrapped = fakeResponse(
+      JSON.stringify({ contents: "hello", status: { http_code: 201, content_type: "text/plain" } }),
+    );
+    const real = await allOriginsGet(wrapped);
+    expect(real.status).toBe(201);
+    expect(real.headers.get("content-type")).toBe("text/plain");
+    expect(await real.text()).toBe("hello");
+  });
+
+  it("handles null contents without throwing", async () => {
+    const wrapped = fakeResponse(JSON.stringify({ contents: null }));
+    const real = await allOriginsGet(wrapped);
+    expect(await real.text()).toBe("");
+    expect(real.status).toBe(200);
+  });
+}

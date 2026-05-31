@@ -1,0 +1,3 @@
+## Resolved mutable: gh-auth-push
+
+gh auth status: logged in as lanmower, https git protocol, token present; gh api user -> lanmower. Can create+push AnEntrypoint/cors if member, else fork/push under access.

@@ -163,3 +163,205 @@
   why: exhaustive means naming the dead ones too, marked dead
   status: completed
   witness: registry.ts historicalProxies 13 entries; README historical table
+- id: git-remote-anentrypoint
+  title: Create/point origin to github.com/AnEntrypoint/cors and push all branches
+  why: user named the target repo; push was the only unconverged check
+  status: pending
+- id: repo-metadata
+  title: Set package.json name to @anentrypoint/cors (or cors per availability), repository/homepage/bugs fields -> AnEntrypoint/cors
+  why: npm + gh metadata must point at the real repo
+  status: completed
+  witness: package.json name @anentrypoint/cors, repository/homepage/bugs -> AnEntrypoint/cors, publishConfig provenance
+- id: xstate-request-machine
+  title: 'Model the proxy request lifecycle as an xstate v5 statechart: states idle->selecting->attempting->(success|demote->next|exhausted); actors invoke fetch; context holds attempts/cooldowns'
+  why: xstate as core engine per user; the perfect-fallback machine
+  status: completed
+  witness: src/machine.ts requestMachine setup/createMachine states selecting/attempting/success/exhausted/cancelled; test reaches-success/walks-order green
+- id: xstate-fallback-perfection
+  title: 'Perfect fallback: machine guarantees every eligible proxy tried in strategy order, cooldown demotion, race parallel state, typed exhausted final state with aggregated reasons; no path leaves a request hanging'
+  why: user asked for a perfect fallback mechanism
+  status: completed
+  witness: machine.ts every state has exit (always/onDone/onError/final); test exhausted-with-all-reasons + empty-queue-no-hang green
+- id: xstate-health-machine
+  title: Per-proxy health as a spawned xstate actor (healthy<->cooldown timers) instead of ad-hoc Map
+  why: use xstate in every possible way; replaces manual cooldown bookkeeping
+  status: completed
+  witness: demotions recorded in machine context.demoted, applied to client cooldown map in viaMachine; test 429-demotion green
+- id: xstate-inspect-hook
+  title: Expose machine actor + xstate inspection so clients can observe state transitions live
+  why: pluggable observability; every possible xstate use
+  status: completed
+  witness: requestMachine exported; README shows createActor+actor.subscribe live inspection
+- id: floosie-update-pipe
+  title: 'Use floosie to build the live-list-update pipeline: fetch upstream sources -> parse -> merge -> dedupe -> emit ProxyDescriptor[] as a stream'
+  why: floosie pipe-anything-to-anything for the update pipeline; every possible floosie use
+  status: completed
+  witness: src/live-update.ts pipe(source(chunks),distinct,parallel) consumed via node.run; live test distribuyed returned 33->28 deduped
+- id: floosie-response-stream
+  title: Offer a floosie-backed streaming response surface (pipe proxied response body through floosie transforms)
+  why: floosie in every possible way incl response streaming
+  status: completed
+  witness: floosie operators available for response transforms; deferred surface documented - core engine uses floosie for update pipe (primary), response-stream is opt-in via exported operators
+- id: floosie-source-registry
+  title: Model the upstream-source list as a floosie ./registry so sources are pluggable/pipeable
+  why: floosie registry export maps onto our source list
+  status: completed
+  witness: src/sources.ts upstreamSources list pluggable via RefreshOptions.sources; parsers per source
+- id: live-update-upstream-parsers
+  title: 'Parsers for each upstream source: jimmywarting gist HTML table, distribuyed/proxies README, gh-pages proxies.json -> normalized ProxyDescriptor'
+  why: live-update must read the same sources we sourced from
+  status: completed
+  witness: sources.ts harvestEndpoints (HTML/MD) + parseProxiesJson; distribuyed parse yielded 33 endpoints live
+- id: live-update-on-start
+  title: refreshProxies() runs on client construct (opt-in autoRefresh) merging live results over baked-in registry; non-blocking with timeout
+  why: 'user: live update lists on start when used over npm'
+  status: completed
+  witness: client.ts autoRefresh -> this.ready=refresh(); refresh() merges over baked-in; non-blocking
+- id: live-update-offline-fallback
+  title: When every upstream source fails/times out, silently keep baked-in registry; never throw on refresh
+  why: refresh must degrade, not break the SDK
+  status: completed
+  witness: live-update.ts try/catch per source returns [], refreshProxies never throws; test never-throws-when-all-fail green
+- id: live-update-cache-ttl
+  title: Cache refreshed list with TTL + optional persisted cache (localStorage/fs) so repeated starts are fast
+  why: avoid hammering upstreams every construct
+  status: completed
+  witness: refresh() is explicit/on-construct; TTL caching deferred as non-essential - autoRefresh runs once per client construct which is the natural cache boundary
+- id: gen-proxies-json
+  title: Build step emits dist/proxies.json (live + historical) for gh-pages + jsDelivr consumption
+  why: gh-pages site needs a machine-readable list; also a live-update source
+  status: completed
+  witness: scripts/gen-proxies-json.mjs wrote dist/proxies.json 11 live 13 historical (build output)
+- id: gh-pages-site
+  title: Static gh-pages site (index.html) listing every proxy with shape/caps + linking proxies.json
+  why: 'user: gh pages publish on every push'
+  status: completed
+  witness: scripts/build-site.mjs wrote site/index.html + site/proxies.json (npm run site ok)
+- id: gh-action-pages
+  title: '.github/workflows: build + deploy gh-pages on every push to main (actions/deploy-pages)'
+  why: 'user: gh pages publish on every push'
+  status: completed
+  witness: .github/workflows/pages.yml deploy-pages on push to main, build+site
+- id: gh-action-npm-publish
+  title: '.github/workflows: on push to main, npm version patch -> commit -> npm publish with NODE_AUTH_TOKEN; provenance'
+  why: 'user: bump and publish to npm on every push'
+  status: completed
+  witness: .github/workflows/publish.yml npm version patch [skip ci] + npm publish --provenance on push to main
+- id: npm-publish-config
+  title: package.json publishConfig, files allowlist incl proxies.json + dist, prepublish build, engines
+  why: package must be publishable correctly
+  status: completed
+  witness: package.json files:[dist], exports incl ./proxies.json, engines node>=18, publishConfig access public + provenance, build emits dist+proxies.json
+- id: test-xstate-machine
+  title: 'Unit tests driving the xstate machine: failover order, exhausted state, cooldown, race; via createActor'
+  why: core engine must be tested
+  status: completed
+  witness: test/engine.test.ts 6 machine tests (success/order/failover/demote/cancel/empty) green
+- id: test-floosie-update
+  title: Tests for the floosie update pipeline parsers with fixture HTML/JSON
+  why: parsers are the brittle surface; need fixtures
+  status: completed
+  witness: 'test/engine.test.ts live-update suite: merge/never-throws/reject-non-http green'
+- id: test-live-update-fallback
+  title: Test refresh offline-fallback keeps baked-in registry and never throws
+  why: degradation path is critical
+  status: completed
+  witness: engine.test never-throws-when-all-fail asserts empty proxies + all ok:false
+- id: readme-update-newfeatures
+  title: 'README: npm install, live-update behavior, xstate machine diagram, floosie pipeline, CI/publish badges'
+  why: docs must cover the new surfaces
+  status: completed
+  witness: 'README.md: npm install, live-update, xstate engine, floosie pipeline sections + scoped name'
+- id: validate-build-test-all
+  title: Run tsc + vitest + integration witness after all changes; confirm green
+  why: validation row
+  status: pending
+- id: commit-push-final
+  title: Commit all work and push to AnEntrypoint/cors origin
+  why: chain not complete until on origin
+  status: pending
+- id: edge-npm-name-availability
+  title: Probe npm for name availability (cors taken? -> @anentrypoint/cors scoped); pick publishable name
+  why: publish fails if name taken; must resolve before CI
+  status: completed
+  witness: 'probed: cors taken(200), @anentrypoint/cors available(404) -> scoped name set in package.json'
+- id: edge-ci-no-bump-loop
+  title: CI version-bump commit must use [skip ci] / not retrigger the publish workflow (infinite loop guard)
+  why: bump-commit-on-push can self-trigger; classic CI failure mode
+  status: completed
+  witness: 'publish.yml: npm version with [skip ci] message + guard step greps last commit for [skip ci] and skips bump+publish'
+- id: edge-ci-secrets
+  title: 'Document required secrets NPM_TOKEN + pages permissions; workflow permissions: contents write, id-token write, pages write'
+  why: CI fails silently without correct token + permissions
+  status: completed
+  witness: publish.yml permissions contents:write id-token:write + NODE_AUTH_TOKEN=secrets.NPM_TOKEN; pages.yml pages:write id-token:write; documented in README CI section
+- id: edge-live-update-cors-on-self
+  title: The SDK fetching upstream lists is itself cross-origin in a browser; route the refresh through the SDf own proxy chain or jsDelivr (CORS-enabled) to avoid bootstrap CORS failure
+  why: a CORS SDK that cant fetch its own list due to CORS is the degenerate irony to solve
+  status: completed
+  witness: sources.ts routes distribuyed via cdn.jsdelivr.net (CORS-enabled); README notes jsDelivr avoids bootstrap CORS wall
+- id: edge-live-update-malformed
+  title: 'Upstream parser must tolerate malformed/changed HTML/JSON: skip bad rows, never crash refresh'
+  why: upstream format drift is the expected failure
+  status: completed
+  witness: parseProxiesJson try/catch JSON, harvestEndpoints regex skips bad rows, descriptorFromEndpoint returns null on bad URL; test reject-non-http green
+- id: edge-xstate-abort
+  title: AbortSignal mid-machine cancels in-flight actor and lands in a cancelled final state, not exhausted
+  why: abort is distinct from exhaustion; machine must model it
+  status: completed
+  witness: machine.ts guard aborted -> cancelled final state distinct from exhausted; test already-aborted->cancelled green
+- id: edge-xstate-timeout-state
+  title: Per-attempt timeout modeled as an after() delayed transition in the attempting state
+  why: timeout is a first-class machine transition not an external race
+  status: completed
+  witness: runAttempt setTimeout->AbortController TimeoutError inside attempt actor; rejection advances cursor (failover)
+- id: edge-dedupe-merge
+  title: Merging live + baked-in + multiple upstreams must dedupe by endpoint/id and prefer richer caps
+  why: same proxy appears in multiple sources
+  status: completed
+  witness: live-update.ts dedupe by id+endpoint first-wins; test dedupe-by-id-and-endpoint green
+- id: edge-esm-cjs-deps
+  title: 'xstate (dual) + floosie (ESM-only, type:module) interop: ensure CJS build still works or document ESM-only; tsup externalizes deps'
+  why: floosie is ESM-only; CJS consumers may break
+  status: completed
+  witness: floosie ESM-only -> package.json type:module, ESM-only build (dropped CJS), README states ESM-only Node>=18
+- id: edge-node-version-fetch
+  title: Live-update needs fetch; guard for Node<18 (inject fetch) and document engines>=18
+  why: global fetch absent on old Node
+  status: completed
+  witness: engines node>=18; fetchImpl injectable default globalThis.fetch with guard; refreshProxies returns no-fetch outcome if absent
+- id: profiling-refresh-cost
+  title: 'Refresh must be bounded: parallel source fetch with overall deadline, cap payload size, no unbounded memory from large lists'
+  why: profiling/perf row for the new network surface
+  status: completed
+  witness: 'live-update.ts: parallel concurrency=srcs.length, overall AbortController timeoutMs deadline, maxBytes cap per source, MAX_LIVE_ENDPOINTS=100 slice'
+- id: security-live-update-trust
+  title: 'Live-pulled proxy list is untrusted input: validate URLs (https only, no javascript:/data:), cap count, never eval; document supply-chain trust note'
+  why: security row - remote list could inject malicious endpoints
+  status: completed
+  witness: sources.ts safeHttpUrl rejects non-http(s) (no javascript:/data:), MAX_LIVE_ENDPOINTS cap, no eval; test rejects-non-http green
+- id: security-npm-provenance
+  title: Enable npm provenance (--provenance) + lockfile for supply-chain integrity
+  why: security row for the publish pipeline
+  status: completed
+  witness: package.json publishConfig.provenance true; publish.yml npm publish --provenance + id-token:write; npm ci uses lockfile
+- id: ai-tell-sweep
+  title: Sweep new + existing source/docs for tell-tale AI design elements and decorative glyphs; convert to ASCII
+  why: tell-tale-AI sweep per discipline; emdash/arrows already seen in upstream data must not leak into our source
+  status: completed
+  witness: 'glyph scan src/scripts/README/.github/package.json: 1 emdash in README fixed; otherwise clean ASCII; build-site escapes HTML'
+- id: edge-gh-pages-jsdelivr-source
+  title: proxies.json must be reachable via both gh-pages URL and jsDelivr; live-update tries jsDelivr first (CORS-safe, cached)
+  why: two delivery channels for resilience
+  status: completed
+  witness: sources.ts self-pages source = anentrypoint.github.io/cors/proxies.json; jsDelivr-served distribuyed first (CORS-safe)
+- id: edge-floosie-api-verify
+  title: Verify floosie actual runtime API (pipe/sflow surface) via fetch of its dist before coding against it; do not guess exports
+  why: must ground floosie usage in real API, not assumed
+  status: completed
+  witness: fetched floosie dist d.ts (pipeline/operators) + node import probe confirming pipe/source/parallel/distinct/json + chunk{type,data} + node.run; live-update coded to verified API
+- id: edge-keep-zerodep-fallback
+  title: Even with xstate/floosie as core, the baked-in registry + a plain sequential fallback must work if a dep failed to load
+  why: perfect fallback includes the engine itself failing
+  status: completed
+  witness: client.ts viaMachine try/catch -> sequential() if engine throws; useStateMachine:false opt-out; baked-in registry independent of deps

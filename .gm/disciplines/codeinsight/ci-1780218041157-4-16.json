@@ -1,0 +1,4 @@
+./src/untransform.ts:4:6 passthrough
+async function passthrough(res: Response): Promise<Response> {
+  return res;
+}

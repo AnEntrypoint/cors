@@ -1,0 +1,4 @@
+./src/registry.ts:179:181 getProxy
+function getProxy(id: string): ProxyDescriptor | undefined {
+  return builtinProxies.find((p) => p.id === id);
+}

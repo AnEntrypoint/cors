@@ -1,0 +1,9 @@
+./test/sdk.test.ts:219:226 
+() => {
+  it("returns a fetch-compatible function", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(fakeResponse("ok"));
+    const pf = createProxiedFetch({ fetchImpl });
+    const res = await pf(TARGET);
+    expect(await res.text()).toBe("ok");
+  });
+}

@@ -1,0 +1,3 @@
+## Resolved mutable: npm-package-name
+
+registry.npmjs.org/cors -> 200 (taken); /@anentrypoint%2Fcors -> 404 (available). Use @anentrypoint/cors scoped.

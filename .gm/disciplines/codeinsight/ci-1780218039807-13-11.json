@@ -1,0 +1,9 @@
+./src/registry.ts:13:20 forwardInit
+function forwardInit(req: TargetRequest, forwardHeaders: boolean): RequestInit {
+  return {
+    method: req.method,
+    headers: forwardHeaders ? req.headers : undefined,
+    body: req.body,
+    signal: req.signal,
+  };
+}

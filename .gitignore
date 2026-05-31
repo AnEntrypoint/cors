@@ -12,3 +12,4 @@ dist/
 .gm/next-step.md
 .gm/turn-state.json
 .gm/residual-check-fired
+site/

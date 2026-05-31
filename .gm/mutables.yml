@@ -1,0 +1,12 @@
+- id: npm-package-name
+  status: witnessed
+  note: 'publishable npm name: bare cors likely taken -> probe, fallback @anentrypoint/cors scoped'
+  witness_evidence: registry.npmjs.org/cors -> 200 (taken); /@anentrypoint%2Fcors -> 404 (available). Use @anentrypoint/cors scoped.
+- id: floosie-runtime-api
+  status: witnessed
+  note: actual floosie pipe/sflow export surface to code against
+  witness_evidence: 'floosie@0.7.6 dist/index.d.ts exports: pipe,connect,source,sink (pipeline.js); operators mux,split,gate,scan,zip,batch,throttle,distinct,parallel,take,drop; registry; createNode; chunk codecs json/html/text/httpResponse; buffer digest/gzip'
+- id: gh-auth-push
+  status: witnessed
+  note: whether gh CLI / git creds can create+push AnEntrypoint/cors
+  witness_evidence: 'gh auth status: logged in as lanmower, https git protocol, token present; gh api user -> lanmower. Can create+push AnEntrypoint/cors if member, else fork/push under access.'

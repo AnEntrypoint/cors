@@ -1,0 +1,15 @@
+./src/registry.ts:48:61 queryProxy
+function queryProxy(o: FactoryOpts): ProxyDescriptor {
+  const caps = o.caps ?? GET_ONLY;
+  return {
+    id: o.id,
+    label: o.label,
+    endpoint: o.base,
+    caps,
+    transform: (req) => ({
+      url: `${o.base}${q(req.url)}`,
+      init: caps.body ? forwardInit(req, caps.forwardsHeaders) : { method: "GET", signal: req.signal },
+    }),
+    untransform: untransforms.passthrough,
+  };
+}

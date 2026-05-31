@@ -1,0 +1,2 @@
+./src/registry.ts:112:112 
+(req) => ({ url: `https://api.allorigins.win/get?url=${q(req.url)}`, init: { method: "GET", signal: req.signal } })

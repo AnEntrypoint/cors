@@ -1,0 +1,4 @@
+./test/sdk.test.ts:17:19 fakeResponse
+function fakeResponse(body: string, init?: ResponseInit): Response {
+  return new Response(body, init);
+}

@@ -1,0 +1,14 @@
+./test/sdk.test.ts:42:54 
+() => {
+  const req = { url: "https://example.com/p?x=1", method: "GET", headers: new Headers(), body: null, signal: null };
+
+  it("queryProxy URL-encodes the target onto the base", () => {
+    const p = queryProxy({ id: "t", label: "t", base: "https://h/?url=" });
+    expect(p.transform(req).url).toBe(`https://h/?url=${encodeURIComponent(req.url)}`);
+  });
+
+  it("prefixProxy appends the raw target to the base", () => {
+    const p = prefixProxy({ id: "t", label: "t", base: "https://h/" });
+    expect(p.transform(req).url).toBe(`https://h/${req.url}`);
+  });
+}

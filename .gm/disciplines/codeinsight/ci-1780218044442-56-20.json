@@ -1,0 +1,42 @@
+./test/sdk.test.ts:56:96 
+() => {
+  it("query-style encodes the full target including its query string", () => {
+    const codetabs = getProxy("codetabs")!;
+    const pr = codetabs.transform({
+      url: TARGET,
+      method: "GET",
+      headers: new Headers(),
+      body: null,
+      signal: null,
+    });
+    expect(pr.url).toBe(
+      `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(TARGET)}`,
+    );
+    // nested query must be encoded, not leaked as top-level params
+    expect(pr.url).not.toContain("&b=2");
+  });
+
+  it("prefix-style appends the raw target", () => {
+    const corsSh = getProxy("cors-sh")!;
+    const pr = corsSh.transform({
+      url: TARGET,
+      method: "GET",
+      headers: new Headers(),
+      body: null,
+      signal: null,
+    });
+    expect(pr.url).toBe(`https://proxy.cors.sh/${TARGET}`);
+  });
+
+  it("cors-anywhere injects X-Requested-With when absent", () => {
+    const ca = getProxy("cors-anywhere-herokuapp")!;
+    const pr = ca.transform({
+      url: TARGET,
+      method: "GET",
+      headers: new Headers(),
+      body: null,
+      signal: null,
+    });
+    expect(new Headers(pr.init.headers).get("x-requested-with")).toBe("XMLHttpRequest");
+  });
+}

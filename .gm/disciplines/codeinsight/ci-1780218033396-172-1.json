@@ -1,0 +1,6 @@
+./src/client.ts:172:176 createProxiedFetch
+function createProxiedFetch(opts?: ClientOptions): typeof fetch {
+  const client = new CorsProxyClient(opts);
+  return ((input: RequestInfo | URL, reqInit?: RequestInit) =>
+    client.fetch(input, reqInit)) as typeof fetch;
+}

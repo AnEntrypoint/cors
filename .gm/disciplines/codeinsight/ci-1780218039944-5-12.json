@@ -1,0 +1,4 @@
+./src/registry.ts:5:7 q
+function q(url: string): string {
+  return encodeURIComponent(url);
+}

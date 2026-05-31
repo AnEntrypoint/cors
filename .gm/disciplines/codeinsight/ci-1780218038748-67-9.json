@@ -1,0 +1,15 @@
+./src/registry.ts:67:80 prefixProxy
+function prefixProxy(o: FactoryOpts): ProxyDescriptor {
+  const caps = o.caps ?? ALL_METHODS;
+  return {
+    id: o.id,
+    label: o.label,
+    endpoint: o.base,
+    caps,
+    transform: (req) => ({
+      url: `${o.base}${req.url}`,
+      init: caps.body ? forwardInit(req, caps.forwardsHeaders) : { method: req.method, signal: req.signal },
+    }),
+    untransform: untransforms.passthrough,
+  };
+}

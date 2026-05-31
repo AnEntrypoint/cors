@@ -1,0 +1,2 @@
+./test.js:34:34 
+(req) => ({ url: `https://does-not-resolve.invalid/?u=${encodeURIComponent(req.url)}`, init: {} })

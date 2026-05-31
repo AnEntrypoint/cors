@@ -1,0 +1,3 @@
+## Resolved mutable: floosie-runtime-api
+
+floosie@0.7.6 dist/index.d.ts exports: pipe,connect,source,sink (pipeline.js); operators mux,split,gate,scan,zip,batch,throttle,distinct,parallel,take,drop; registry; createNode; chunk codecs json/html/text/httpResponse; buffer digest/gzip

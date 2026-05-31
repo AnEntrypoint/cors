@@ -1,5 +1,9 @@
+import { createActor, waitFor } from "xstate";
 import { AllProxiesFailedError } from "./errors.js";
+import { requestMachine } from "./machine.js";
 import { builtinProxies } from "./registry.js";
+import { refreshProxies } from "./live-update.js";
+import { dedupe } from "./live-update.js";
 import type {
   ClientOptions,
   ProxyAttemptError,
@@ -54,19 +58,23 @@ function withTimeout(
 }
 
 export class CorsProxyClient {
-  private readonly proxies: ProxyDescriptor[];
+  private proxies: ProxyDescriptor[];
   private readonly strategy: SelectionStrategy;
   private readonly timeoutMs: number;
   private readonly cooldownMs: number;
   private readonly fetchImpl: typeof fetch;
+  private readonly useStateMachine: boolean;
   private readonly state = new Map<string, ProxyState>();
   private rrCursor = 0;
+  /** Resolves once the initial autoRefresh (if any) has settled. */
+  readonly ready: Promise<void>;
 
   constructor(opts: ClientOptions = {}) {
     this.proxies = opts.proxies ?? builtinProxies;
     this.strategy = opts.strategy ?? DEFAULTS.strategy;
     this.timeoutMs = opts.timeoutMs ?? DEFAULTS.timeoutMs;
     this.cooldownMs = opts.cooldownMs ?? DEFAULTS.cooldownMs;
+    this.useStateMachine = opts.useStateMachine ?? true;
     const impl = opts.fetchImpl ?? globalThis.fetch;
     if (typeof impl !== "function") {
       throw new TypeError(
@@ -74,6 +82,19 @@ export class CorsProxyClient {
       );
     }
     this.fetchImpl = impl.bind(globalThis);
+    this.ready = opts.autoRefresh ? this.refresh().then(() => undefined) : Promise.resolve();
+  }
+
+  /**
+   * Refresh the proxy list from the upstream community sources and merge the
+   * result over the current list. Never throws; returns the refresh outcome
+   * for observability. On total upstream failure the existing list is kept.
+   */
+  async refresh(): Promise<{ added: number; sources: { id: string; ok: boolean; count: number }[] }> {
+    const result = await refreshProxies({ fetchImpl: this.fetchImpl, timeoutMs: this.timeoutMs });
+    const before = this.proxies.length;
+    this.proxies = dedupe([...this.proxies, ...result.proxies]);
+    return { added: this.proxies.length - before, sources: result.sources };
   }
 
   /** Proxies eligible right now: not in cooldown and capable of the method. */
@@ -157,14 +178,44 @@ export class CorsProxyClient {
     throw new AllProxiesFailedError(attempts);
   }
 
+  /**
+   * Drive the perfect-fallback statechart for one request. Spins up an actor
+   * from requestMachine, waits for a final state, and maps it: `success` ->
+   * Response, `cancelled` -> rethrow the abort reason, `exhausted` ->
+   * AllProxiesFailedError with every attempt. Demotions recorded by the machine
+   * are applied to the cooldown map. Falls back to the plain sequential loop if
+   * the engine throws for any reason.
+   */
+  private async viaMachine(ordered: ProxyDescriptor[], req: TargetRequest): Promise<Response> {
+    let actor;
+    try {
+      actor = createActor(requestMachine, {
+        input: { request: req, queue: ordered, timeoutMs: this.timeoutMs, fetchImpl: this.fetchImpl },
+      });
+      actor.start();
+      const snapshot = await waitFor(actor, (s) => s.status === "done", { timeout: this.timeoutMs * (ordered.length + 1) + 1000 });
+      for (const id of snapshot.context.demoted) this.demote(id);
+      if (snapshot.value === "success" && snapshot.context.response) return snapshot.context.response;
+      if (snapshot.value === "cancelled") {
+        throw req.signal?.reason ?? new DOMException("Aborted", "AbortError");
+      }
+      throw new AllProxiesFailedError(snapshot.context.attempts);
+    } catch (err) {
+      if (err instanceof AllProxiesFailedError || (err as Error)?.name === "AbortError") throw err;
+      // engine itself failed -> perfect fallback to the plain loop
+      return this.sequential(ordered, req);
+    } finally {
+      actor?.stop();
+    }
+  }
+
   /** Drop-in fetch: routes the request through the proxy chain. */
   async fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     const req = toTargetRequest(input, init);
     const ordered = this.order(this.eligible(req));
     if (ordered.length === 0) throw new AllProxiesFailedError([]);
-    return this.strategy === "race"
-      ? this.race(ordered, req)
-      : this.sequential(ordered, req);
+    if (this.strategy === "race") return this.race(ordered, req);
+    return this.useStateMachine ? this.viaMachine(ordered, req) : this.sequential(ordered, req);
   }
 }
 

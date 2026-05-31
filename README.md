@@ -1,4 +1,4 @@
-# cors-proxy-sdk
+# @anentrypoint/cors
 
 A pluggable SDK that routes `fetch` requests through a registry of public CORS
 proxies, with health-ranked failover. Drop it into any client (browser, Node
@@ -8,18 +8,71 @@ a working cross-origin request without standing up your own proxy.
 ## Install
 
 ```sh
-npm install cors-proxy-sdk
+npm install @anentrypoint/cors
 ```
+
+ESM-only, Node >= 18 (or any runtime with global `fetch`). Depends on
+[`xstate`](https://stately.ai/docs/xstate) (failover engine) and
+[`floosie`](https://www.npmjs.com/package/floosie) (live-update pipeline).
 
 ## Usage
 
 ```ts
-import { createProxiedFetch } from "cors-proxy-sdk";
+import { createProxiedFetch } from "@anentrypoint/cors";
 
 const fetch = createProxiedFetch();
 const res = await fetch("https://api.example.com/data");
 const data = await res.json();
 ```
+
+### Live-updating the proxy list
+
+When `autoRefresh` is set, the client pulls the freshest proxy list from the
+upstream community sources it was originally built from (the
+[distribuyed/proxies](https://github.com/distribuyed/proxies) list via jsDelivr,
+[jimmywarting's gist](https://gist.github.com/jimmywarting/ac1be6ea0297c16c477e17f8fbe51347),
+and this project's own published `proxies.json`) and merges them over the
+baked-in registry on start. The refresh is non-blocking and never throws - if
+every source is unreachable (offline, CORS, format drift), the baked-in
+registry is kept.
+
+```ts
+import { CorsProxyClient } from "@anentrypoint/cors";
+
+const client = new CorsProxyClient({ autoRefresh: true });
+await client.ready;                       // optional: wait for the first refresh
+const res = await client.fetch("https://api.example.com/data");
+
+// or refresh on demand:
+const { added, sources } = await client.refresh();
+```
+
+The fetch that pulls the lists is routed through CORS-enabled CDNs (jsDelivr),
+so the SDK can update itself even inside a browser without hitting the very CORS
+wall it exists to solve.
+
+### Perfect failover (xstate engine)
+
+Each request is driven by an [xstate](https://stately.ai/docs/xstate)
+statechart (`requestMachine`): `selecting -> attempting -> (success | next |
+exhausted | cancelled)`. Every eligible proxy is tried in strategy order; a
+`429`/`403` records a cooldown demotion; an aborted signal lands in `cancelled`;
+running out of proxies lands in `exhausted` with every attempt's reason. No path
+leaves a request pending. If the engine itself fails to load or settle, the
+client transparently falls back to a plain sequential loop - the fallback is
+perfect down to the engine.
+
+```ts
+import { requestMachine } from "@anentrypoint/cors";
+import { createActor } from "xstate";
+// inspect transitions live
+const actor = createActor(requestMachine, { input: { /* ... */ } });
+actor.subscribe((s) => console.log(s.value));
+```
+
+The live-update pipeline is built with [floosie](https://www.npmjs.com/package/floosie):
+sources are emitted as floosie chunks through `source(...)`, fetched and parsed
+concurrently by the `parallel` operator, and deduped by the `distinct` operator.
 
 `createProxiedFetch` returns a function with the same signature as the global
 `fetch`, so it is a drop-in replacement.
@@ -27,7 +80,7 @@ const data = await res.json();
 ### Client with options
 
 ```ts
-import { CorsProxyClient } from "cors-proxy-sdk";
+import { CorsProxyClient } from "@anentrypoint/cors";
 
 const client = new CorsProxyClient({
   strategy: "race",      // first proxy to answer wins
@@ -53,7 +106,7 @@ per-proxy reasons.
 ### Custom registry
 
 ```ts
-import { CorsProxyClient, getProxy, type ProxyDescriptor } from "cors-proxy-sdk";
+import { CorsProxyClient, getProxy, type ProxyDescriptor } from "@anentrypoint/cors";
 
 const mine: ProxyDescriptor = {
   id: "my-worker",
@@ -76,7 +129,7 @@ Public CORS proxies are heterogeneous in their request contract and unreliable
 in their uptime. The inventory below was cross-checked against the canonical
 community-maintained lists ([jimmywarting's gist](https://gist.github.com/jimmywarting/ac1be6ea0297c16c477e17f8fbe51347)
 and [distribuyed/proxies](https://github.com/distribuyed/proxies)) and live-probed
-at time of writing. None is guaranteed to be up — that is exactly why the SDK
+at time of writing. None is guaranteed to be up - that is exactly why the SDK
 fails over.
 
 `codetabs` and `cors-lol` were live-confirmed returning 200; `corsproxy-io` and
@@ -106,7 +159,7 @@ Use the `queryProxy` / `prefixProxy` factories instead of hand-writing a
 descriptor:
 
 ```ts
-import { CorsProxyClient, queryProxy, prefixProxy } from "cors-proxy-sdk";
+import { CorsProxyClient, queryProxy, prefixProxy } from "@anentrypoint/cors";
 
 const client = new CorsProxyClient({
   proxies: [

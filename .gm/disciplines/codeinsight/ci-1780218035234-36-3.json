@@ -1,0 +1,20 @@
+./src/client.ts:36:54 withTimeout
+function withTimeout(
+  signal: AbortSignal | null,
+  timeoutMs: number,
+): { signal: AbortSignal; cancel: () => void } {
+  const ctrl = new AbortController();
+  const onAbort = () => ctrl.abort((signal as AbortSignal)?.reason);
+  if (signal) {
+    if (signal.aborted) ctrl.abort(signal.reason);
+    else signal.addEventListener("abort", onAbort, { once: true });
+  }
+  const timer = setTimeout(() => ctrl.abort(new DOMException("Timeout", "TimeoutError")), timeoutMs);
+  return {
+    signal: ctrl.signal,
+    cancel: () => {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
+    },
+  };
+}

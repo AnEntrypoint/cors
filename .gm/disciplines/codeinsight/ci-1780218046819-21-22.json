@@ -1,0 +1,21 @@
+./test/sdk.test.ts:21:40 
+() => {
+  it("registers a non-trivial set of distinct proxies", () => {
+    expect(builtinProxies.length).toBeGreaterThanOrEqual(11);
+    const ids = new Set(builtinProxies.map((p) => p.id));
+    expect(ids.size).toBe(builtinProxies.length);
+  });
+
+  it("looks up by id", () => {
+    expect(getProxy("codetabs")?.id).toBe("codetabs");
+    expect(getProxy("cors-lol")?.id).toBe("cors-lol");
+    expect(getProxy("nope")).toBeUndefined();
+  });
+
+  it("documents historical/defunct proxies without registering them", () => {
+    expect(historicalProxies.length).toBeGreaterThanOrEqual(10);
+    const liveIds = new Set(builtinProxies.map((p) => p.id));
+    // none of the documented-dead ones are in the live registry
+    for (const h of historicalProxies) expect(liveIds.has(h.id)).toBe(false);
+  });
+}

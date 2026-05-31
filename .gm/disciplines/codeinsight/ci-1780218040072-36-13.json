@@ -1,0 +1,2 @@
+./src/untransform.ts:36:36 
+(res: Response, _req: TargetRequest) => allOriginsGet(res)

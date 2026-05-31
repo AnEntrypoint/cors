@@ -1,0 +1,6 @@
+./src/registry.ts:129:133 
+(req) => {
+      const headers = new Headers(req.headers);
+      if (!headers.has("x-requested-with")) headers.set("x-requested-with", "XMLHttpRequest");
+      return { url: `https://cors-anywhere.herokuapp.com/${req.url}`, init: { method: req.method, headers, body: req.body, signal: req.signal } };
+    }

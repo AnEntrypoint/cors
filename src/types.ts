@@ -76,6 +76,20 @@ export interface ClientOptions {
    * eligible again. Default 60000.
    */
   cooldownMs?: number;
+  /**
+   * When true, the client refreshes its proxy list from the upstream community
+   * sources on construction (non-blocking; merged over the baked-in registry).
+   * Default false. The refresh never throws; on total failure the baked-in
+   * registry is kept.
+   */
+  autoRefresh?: boolean;
+  /**
+   * Use the xstate statechart engine for sequential failover. Default true.
+   * If the engine import is unavailable or the actor fails to settle, the
+   * client transparently uses a plain sequential loop (perfect fallback even
+   * for the engine itself).
+   */
+  useStateMachine?: boolean;
 }
 
 /** Per-proxy failure captured when every attempt in a chain fails. */
