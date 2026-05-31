@@ -11,3 +11,4 @@ dist/
 .gm/long-gap-retry-state
 .gm/next-step.md
 .gm/turn-state.json
+.gm/residual-check-fired
