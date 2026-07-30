@@ -1,2 +1,0 @@
-./test.js:55:55 
-() => ({ url: "https://does-not-resolve.invalid/", init: {} })

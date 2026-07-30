@@ -1,5 +1,0 @@
-./test.js:7:10 check
-function check(name, cond) {
-  if (cond) console.log(`pass: ${name}`);
-  else { console.log(`FAIL: ${name}`); failures++; }
-}
