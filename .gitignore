@@ -13,3 +13,4 @@ dist/
 .gm/turn-state.json
 .gm/residual-check-fired
 site/
+config.bat
